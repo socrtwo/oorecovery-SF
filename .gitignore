@@ -1,0 +1,28 @@
+# IDE / Visual Studio
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+.vs/
+[Bb]in/
+[Oo]bj/
+[Dd]ebug/
+[Rr]elease/
+packages/
+*.nupkg
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+ehthumbs.db
+
+# Backups
+*.bak
+*.tmp
+*.swp
+*~
+
+# Config with credentials
+config.php
+cookiefile
