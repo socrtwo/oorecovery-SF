@@ -1,5 +1,10 @@
 # OpenOffice Recovery
 
+<!--PAGES_LINK_BANNER-->
+> 🌐 **Live page:** [https://socrtwo.github.io/oorecovery-SF/](https://socrtwo.github.io/oorecovery-SF/)  
+> 📦 **Releases:** [github.com/socrtwo/oorecovery-SF/releases](https://github.com/socrtwo/oorecovery-SF/releases)
+<!--/PAGES_LINK_BANNER-->
+
 Recovers text from corrupt OpenOffice/LibreOffice files (ODT, ODS, ODP) by directly parsing the XML content inside the ODF zip archive.
 
 **Language:** Perl  
