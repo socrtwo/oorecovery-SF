@@ -14,42 +14,61 @@
 
 ---
 
-Recovers text from corrupt OpenOffice/LibreOffice files (ODT, ODS, ODP) by directly parsing the XML content inside the ODF zip archive.
+Recover text from — and rebuild — corrupt OpenDocument files (**`.odt`**, **`.ods`**,
+**`.odp`**, and OpenOffice.org 1.x **`.sxw`/`.sxc`/`.sxi`**). Originally a Windows/Perl
+command-line tool migrated from SourceForge; now a fully offline, cross-platform
+**web / PWA** app that runs entirely in your browser. Your file never leaves your device.
 
-**Language:** Perl  
-**License:** MIT
+**Language:** JavaScript (zero dependencies) · **License:** MIT
 
 ## Features
 
-- Extracts text from corrupt ODT, ODS, and ODP files
-- Parses content.xml directly from the ODF zip archive
-- Works when LibreOffice/OpenOffice cannot open the file
-- Command-line tool for batch processing
+- **Three-stage recovery**, all client-side:
+  1. **Standard ZIP read** — opens the archive and validates each entry.
+  2. **Low-level byte scan** — when the central directory is destroyed, scans the
+     raw bytes for ZIP local-file headers and rebuilds entries one by one.
+  3. **XML repair & text rescue** — fixes truncated/malformed XML and extracts
+     paragraph and heading text from `content.xml` as a plain-text fallback.
+- **Rebuilds a valid ODF package** — the `mimetype` member is written first and
+  uncompressed, exactly as the OpenDocument spec requires, so LibreOffice and
+  Apache OpenOffice recognise the repaired file.
+- **Two outputs:** a repaired `.odt`/`.ods`/`.odp`, and a plain `.txt` dump.
+- **100% offline** — installable as a PWA; works with no network after first load.
+- **No upload, no server** — recovery happens locally via the browser's native
+  `DecompressionStream`/`CompressionStream`.
 
-## System Requirements
+## Install & run
 
-- Perl 5.10 or later
-- Linux, macOS, or Windows (with Strawberry Perl or WSL)
+**Easiest — use the hosted app (and install it):**
+Open <https://socrtwo.github.io/oorecovery-SF/> and click the browser's install
+icon (Chrome/Edge) or *Share → Add to Home Screen* (iOS Safari) to get an
+offline desktop/home-screen app.
 
-## Installation & Usage
+**Or download a platform bundle from [Releases](https://github.com/socrtwo/oorecovery-SF/releases):**
 
-### Running
+| Platform | Bundle | How to run |
+| --- | --- | --- |
+| Windows  | `oorecovery-<ver>-windows.zip`   | Unzip, double-click `OoRecovery.bat` |
+| macOS    | `oorecovery-<ver>-macos.zip`     | Unzip, double-click `OoRecovery.command` |
+| Linux    | `oorecovery-<ver>-linux.tar.gz`  | Extract, run `./oorecovery.sh` |
+| ChromeOS | `oorecovery-<ver>-chromeos.zip`  | Install the PWA, or open `web/index.html` in Chrome |
+| Android  | `oorecovery-<ver>-android.zip`   | Install the PWA from Chrome |
+| iOS      | `oorecovery-<ver>-ios.zip`       | Add to Home Screen from Safari |
+| Web      | `oorecovery-<ver>-web.zip`       | Drop `web/` on any static host |
+
+Each bundle contains the full offline app plus a per-platform launcher and
+install instructions (`README.txt`). Verify downloads against `SHA256SUMS`.
+
+## Build releases yourself
 
 ```bash
-# Install Perl (if not already installed)
-# Linux/macOS: usually pre-installed
-# Windows: download Strawberry Perl from https://strawberryperl.com/
-
-# Run the script
-perl <script_name>.pl [arguments]
+bash scripts/build-releases.sh v1.0.0   # writes bundles to dist/
+node scripts/test-recovery.mjs          # run the recovery smoke tests
 ```
 
-### Dependencies
-
-If the script uses CPAN modules, install them with:
-```bash
-cpan install Module::Name
-```
+Or trigger the **Build & publish multi-platform releases** GitHub Action and
+enter a version tag — it tests, builds all bundles, and attaches them to a
+fresh GitHub Release.
 
 ## Origin
 

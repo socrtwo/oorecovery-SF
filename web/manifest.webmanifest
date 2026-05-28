@@ -1,0 +1,18 @@
+{
+  "name": "OO Recovery",
+  "short_name": "OO Recovery",
+  "description": "Repair corrupt OpenDocument files (.odt, .ods, .odp) entirely in your browser. No upload required.",
+  "start_url": ".",
+  "scope": ".",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#06231a",
+  "theme_color": "#06231a",
+  "categories": ["productivity", "utilities"],
+  "icons": [
+    { "src": "icon.svg", "type": "image/svg+xml", "sizes": "any", "purpose": "any" },
+    { "src": "icon-192.png", "type": "image/png", "sizes": "192x192", "purpose": "any" },
+    { "src": "icon-512.png", "type": "image/png", "sizes": "512x512", "purpose": "any" },
+    { "src": "icon-maskable.png", "type": "image/png", "sizes": "512x512", "purpose": "maskable" }
+  ]
+}
