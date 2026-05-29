@@ -13,8 +13,9 @@
  *      pulled from content.xml.
  *
  * Implementation notes:
- *   - No external libraries; uses DecompressionStream/CompressionStream.
- *   - 'deflate-raw' is required (Chromium 95+, Safari 16.4+, Firefox 113+).
+ *   - Decompression uses the Immortal Inflater (immortal-inflate.js) — a
+ *     fault-tolerant pure-JS DEFLATE decoder, so reading needs no browser codec.
+ *   - Output re-compression uses CompressionStream when available, else STORED.
  */
 
 (() => {
@@ -56,14 +57,29 @@
     return (c ^ 0xFFFFFFFF) >>> 0;
   }
 
-  async function inflateRaw(bytes) {
-    const stream = new Response(new Blob([bytes]).stream().pipeThrough(new DecompressionStream('deflate-raw')));
-    return new Uint8Array(await stream.arrayBuffer());
+  // Decompression uses the Immortal Inflater — a fault-tolerant pure-JS
+  // DEFLATE decoder (from socrtwo/Universal-File-Repair-Tool). Unlike the
+  // browser's DecompressionStream it never throws on a corrupt or truncated
+  // stream; it returns whatever bytes it could recover plus an isCorrupt flag.
+  // Loaded as a global from immortal-inflate.js (UMD) — also works in Node.
+  const _Inflate = (typeof ImmortalInflate !== 'undefined')
+    ? ImmortalInflate
+    : (typeof require !== 'undefined' ? require('./immortal-inflate.js') : null);
+
+  function inflateImmortal(bytes) {
+    if (!_Inflate) throw new Error('Immortal Inflater not loaded');
+    return _Inflate(bytes); // { data: Uint8Array, isCorrupt: boolean }
   }
 
+  // Output (re-)compression. We control this data (it is already valid), so a
+  // standard deflate is fine; fall back to STORED when CompressionStream is
+  // unavailable so the app works even without the Streams API.
   async function deflateRaw(bytes) {
-    const stream = new Response(new Blob([bytes]).stream().pipeThrough(new CompressionStream('deflate-raw')));
-    return new Uint8Array(await stream.arrayBuffer());
+    if (typeof CompressionStream === 'undefined') return null;
+    try {
+      const stream = new Response(new Blob([bytes]).stream().pipeThrough(new CompressionStream('deflate-raw')));
+      return new Uint8Array(await stream.arrayBuffer());
+    } catch (_) { return null; }
   }
 
   function readU16(view, offset) { return view.getUint16(offset, true); }
@@ -177,21 +193,17 @@
         if (lhMethod === 0) {
           data = raw;
         } else if (lhMethod === 8) {
-          try {
-            data = await inflateRaw(raw);
-          } catch (err) {
-            let ok = false;
-            for (const trim of [12, 16, 20, 24, 32, 64, 128]) {
-              if (raw.length <= trim) break;
-              try {
-                data = await inflateRaw(raw.slice(0, raw.length - trim));
-                ok = true; break;
-              } catch (_) {}
-            }
-            if (!ok) {
-              log.err(`Failed to decompress ${e.name}: ${err.message}`);
-              continue;
-            }
+          // Immortal Inflater tolerates trailing data-descriptor bytes and
+          // corrupt/truncated streams, returning partial output rather than
+          // throwing — so no trim-and-retry loop is needed.
+          const res = inflateImmortal(raw);
+          data = res.data;
+          if (res.isCorrupt) {
+            log.warn(`${e.name}: DEFLATE stream corrupt — recovered ${data.length} bytes (partial).`);
+          }
+          if (!data || data.length === 0) {
+            log.err(`Failed to decompress ${e.name}.`);
+            continue;
           }
         } else {
           log.warn(`Skipping ${e.name}: unsupported method ${lhMethod}.`);
@@ -330,7 +342,7 @@
       const nameBytes = enc.encode(name);
       const forceStore = (name === 'mimetype');
       const compressed = forceStore ? raw : await deflateRaw(raw);
-      const useStored = forceStore || compressed.length >= raw.length;
+      const useStored = forceStore || !compressed || compressed.length >= raw.length;
       const data = useStored ? raw : compressed;
       const method = useStored ? 0 : 8;
       const crc = crc32(raw);
@@ -502,8 +514,8 @@
   }
 
   function ready() {
-    if (typeof DecompressionStream === 'undefined') {
-      setStatus('This browser does not support DecompressionStream. Please use a recent Chrome, Edge, Safari 16.4+, or Firefox 113+.', 'error');
+    if (!_Inflate) {
+      setStatus('Could not load the Immortal Inflater (immortal-inflate.js). Please reload the page.', 'error');
       $('drop').style.pointerEvents = 'none';
       $('drop').style.opacity = '0.5';
       return;

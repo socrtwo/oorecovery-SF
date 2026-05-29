@@ -1,8 +1,9 @@
 // OO Recovery — minimal cache-first service worker for offline use.
-const CACHE = 'oorecovery-v1';
+const CACHE = 'oorecovery-v2';
 const ASSETS = [
   './',
   './index.html',
+  './immortal-inflate.js',
   './recovery.js',
   './manifest.webmanifest',
   './icon.svg',

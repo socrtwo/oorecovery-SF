@@ -34,8 +34,10 @@ command-line tool migrated from SourceForge; now a fully offline, cross-platform
   Apache OpenOffice recognise the repaired file.
 - **Two outputs:** a repaired `.odt`/`.ods`/`.odp`, and a plain `.txt` dump.
 - **100% offline** — installable as a PWA; works with no network after first load.
-- **No upload, no server** — recovery happens locally via the browser's native
-  `DecompressionStream`/`CompressionStream`.
+- **No upload, no server** — recovery happens locally. Decompression uses the
+  bundled **Immortal Inflater** (`immortal-inflate.js`), a fault-tolerant pure-JS
+  DEFLATE decoder from [Universal-File-Repair-Tool](https://github.com/socrtwo/Universal-File-Repair-Tool)
+  that recovers partial data from corrupt/truncated streams instead of failing.
 
 ## Install & run
 

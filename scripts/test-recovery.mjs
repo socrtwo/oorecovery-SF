@@ -10,6 +10,10 @@ const __dirname = path.dirname(url.fileURLToPath(import.meta.url));
 const ROOT = path.resolve(__dirname, '..');
 const WEB = path.join(ROOT, 'web');
 
+// The recovery engine decompresses with the Immortal Inflater (a global in the
+// browser). Load the same UMD module here and expose it to the sandbox below.
+const ImmortalInflate = (await import(url.pathToFileURL(path.join(WEB, 'immortal-inflate.js')).href)).default;
+
 class FakeDOMParser {
   parseFromString() { return { querySelector: () => null }; }
 }
@@ -140,7 +144,8 @@ function makeSandbox() {
   const sandbox = {
     document,
     DOMParser: FakeDOMParser,
-    DecompressionStream, CompressionStream,
+    ImmortalInflate,
+    CompressionStream,
     TextEncoder, TextDecoder, DataView,
     Uint8Array, Uint16Array, Uint32Array, Int32Array, ArrayBuffer,
     Blob, Response,
