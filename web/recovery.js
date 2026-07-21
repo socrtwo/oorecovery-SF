@@ -414,8 +414,25 @@
 
   async function recover(file, log) {
     const buffer = await file.arrayBuffer();
-    const bytes = new Uint8Array(buffer);
+    let bytes = new Uint8Array(buffer);
     log.info(`Loaded "${file.name}" (${bytes.length.toLocaleString()} bytes)`);
+
+    // First analysis step: shared S2 File Identifier. Reads magic numbers,
+    // separates any embedded/concatenated foreign files (offered for download
+    // in the panel above the results), and hands back the bytes to repair.
+    if (typeof S2FileID !== 'undefined' && typeof document !== 'undefined') {
+      try {
+        const idReport = S2FileID.analyze(bytes, { programKey: 'oorecovery', fileName: file.name });
+        S2FileID.renderPanel(document.getElementById('fileid'), idReport);
+        log.info(`Identified: ${idReport.primary.description}`);
+        if (idReport.mismatch) log.warn('This tool handles .odt/.ods/.odp/.odg — the file appears to be a different type. See the recommendation above.');
+        if (idReport.foreign.length) log.warn(`${idReport.foreign.length} embedded/concatenated file(s) of a different type separated — download them above before repairing the rest.`);
+        if (idReport.multiple) log.info(`Split into ${idReport.segments.length} segments; processing segment ${idReport.proceedSegment.index + 1} (${idReport.proceedSegment.ext}, ${idReport.proceedSegment.length.toLocaleString()} bytes).`);
+        bytes = idReport.proceedBytes;
+      } catch (e) {
+        log.warn(`File identification failed (${e.message || e}) — continuing with raw bytes.`);
+      }
+    }
 
     let entries = null;
     let strategy = 'standard';
@@ -546,6 +563,7 @@
       $('meta').classList.add('hidden');
       $('actions').classList.add('hidden');
       $('status').classList.add('hidden');
+      $('fileid').innerHTML = '';
       log.clear();
     });
 
